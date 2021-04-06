@@ -1,3 +1,5 @@
+console.log("Rocket Patrol");
+
 // game configs
 let config = {
     type: Phaser.CANVAS,
