@@ -6,7 +6,10 @@ class Rocket extends Phaser.GameObjects.Sprite {
         // add object to scene
         scene.add.existing(this);
         this.isFiring = false;
-        this.moveSpeed = game.config.width/320; // AKA 2 with base frame
+        this.moveSpeed = game.config.width/320;
+
+        // add rocket sfx
+        this.sfxRocket = scene.sound.add('sfx_rocket');
     }
 
     update() {
@@ -19,8 +22,11 @@ class Rocket extends Phaser.GameObjects.Sprite {
             }
         }
         // fire button
-        if(Phaser.Input.Keyboard.JustDown(keyF)) {
+        if(Phaser.Input.Keyboard.JustDown(keyF) && !this.isFiring) {
             this.isFiring = true;
+
+            // play sfx
+            this.sfxRocket.play();
         }
         // if fired move rocket up
         if(this.isFiring && this.y >= (borderUISize * 3) + borderPadding) {

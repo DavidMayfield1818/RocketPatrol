@@ -8,8 +8,9 @@ class Play extends Phaser.Scene {
         this.load.image('rocket', './assets/rocket.png');
         this.load.image('spaceship', './assets/spaceship.png');
         this.load.image('starfield', './assets/starfield.png');
+
         // load spritesheet
-        this.load.spritesheet('explosion', './assests/explosion.png', {
+        this.load.spritesheet('explosion', './assets/explosion.png', {
             frameWidth: 64,
             frameHeight: 32,
             starFrame: 0,
@@ -54,32 +55,71 @@ class Play extends Phaser.Scene {
             }),
             frameRate: 30
         });
+
+        // initialize scroe
+        this.p1Score = 0;
+
+        let scoreConfig = {
+            fontFamily: 'Courier',
+            fontSize: '28px',
+            backgroundColor: '#F3B141',
+            color: '#843605',
+            align: 'right',
+            padding: {
+                top: 5,
+                bottom: 5,
+            },
+            fixedWidth: 100
+        }
+        this.scoreleft = this.add.text(borderUISize + borderPadding, borderUISize + borderPadding * 2, this.p1Score, scoreConfig);
+
+        // GAME OVER flag
+        this.gameOver = false;
+
+        // 60-second play clock
+        scoreConfig.fixedWidth = 0;
+        this.clock = this.time.delayedCall(60000, () => {
+            this.add.text(game.config.width/2, game.config.height/2, 'GAME OVER', scoreConfig).setOrigin(0.5);
+            this.add.text(game.config.width/2, game.config.height/2 + game.config.width/10, 'Press (R) to Restart or ← for Menu', scoreConfig).setOrigin(0.5);
+            this.gameOver = true;
+        }, null, this);
     }
 
     update() {
-        // update starfield
-        this.starfield.tilePositionX -= starSpeed;
+        if(!this.gameOver) {
+            // update starfield
+            this.starfield.tilePositionX -= starSpeed;
 
-        // update rocket
-        this.p1Rocket.update();
+            // update rocket
+            this.p1Rocket.update();
 
-        // update spaceship (x3)
-        this.ship01.update();
-        this.ship02.update();
-        this.ship03.update();
+            // update spaceship (x3)
+            this.ship01.update();
+            this.ship02.update();
+            this.ship03.update();
 
-        // check for collisions
-        if(this.checkCollision(this.p1Rocket,this.ship01)){
-            this.p1Rocket.reset();
-            this.ship01.reset();
+            // check for collisions
+            if(this.checkCollision(this.p1Rocket,this.ship01)){
+                this.p1Rocket.reset();
+                this.shipExplode(this.ship01);
+            }
+            if(this.checkCollision(this.p1Rocket,this.ship02)){
+                this.p1Rocket.reset();
+                this.shipExplode(this.ship02);
+            }
+            if(this.checkCollision(this.p1Rocket,this.ship03)){
+                this.p1Rocket.reset();
+                this.shipExplode(this.ship03);
+            }
         }
-        if(this.checkCollision(this.p1Rocket,this.ship02)){
-            this.p1Rocket.reset();
-            this.ship02.reset();
+
+        // check for restart
+        if (this.gameOver && Phaser.Input.Keyboard.JustDown(keyR)) {
+            this.scene.restart();
         }
-        if(this.checkCollision(this.p1Rocket,this.ship03)){
-            this.p1Rocket.reset();
-            this.ship03.reset();
+        // check for menu
+        if (this.gameOver && Phaser.Input.Keyboard.JustDown(keyLeft)) {
+            this.scene.start("menuScene");
         }
     }
 
@@ -93,5 +133,35 @@ class Play extends Phaser.Scene {
         } else {
             return false;
         }
+    }
+
+    shipExplode(ship) {
+        // temporarily hide ship
+        ship.alpha = 0;
+
+        // create explosion sprite at ships location
+        let boom = this.add.sprite(ship.x, ship.y, 'explosion').setOrigin(0, 0);
+
+        // play explode
+        boom.anims.play('explode');
+
+        // callback after anim completes
+        boom.on('animationcomplete', () => {
+            // reset ship pos
+            ship.reset();
+
+            // make visable again
+            ship.alpha = 1;
+
+            // remove the sprite
+            boom.destroy();
+        });
+
+        // score add and repaint
+        this.p1Score += ship.points;
+        this.scoreleft.text = this.p1Score;
+
+        // sound effect one time
+        this.sound.play('sfx_explosion');
     }
 }
